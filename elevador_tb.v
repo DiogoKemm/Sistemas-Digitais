@@ -1,6 +1,6 @@
 module elevador_tb;
 
-    // Entradas para o UUT (Unit Under Test)
+    // Entradas para UUT
     reg clk;
     reg reset;
     reg [4:0] req;
@@ -35,68 +35,62 @@ module elevador_tb;
     // Geração do clock (a cada 5 unidades de tempo, o clock inverte)
     always #5 clk = ~clk;
 
-    // Estímulos de teste
     initial begin
-        // Inicia o dump de formas de onda para visualização
-        $dumpfile("elevador.vcd");
-        $dumpvars(0, elevador_tb);
+        // $dumpfile("elevador.vcd");
+        // $dumpvars(0, elevador_tb);
 
-        // 1. Condição inicial e Reset
         clk = 0;
         reset = 1;
         req = 5'b00000;
         person_enter = 0;
         person_exit = 0;
-        #15; // Espera um pouco com o reset ativo
+        #15;
         reset = 0;
         
+        // 1. Inicio
         $display("Elevador no andar %d, pessoas a bordo: %d", andar_atual, num_people);
-        #10;
 
+        // 2. Ir do térreo para o 4º andar
         req = 5'b10000; 
-        #10;
         $display("Requisição para o andar %d", andar_requisitado);
         
         wait (andar_atual == 3'd4 && door_open == 1);
         $display("Elevador chegou ao andar %d", andar_atual);
-        #10;
-        
+
+        // 3. Uma pessoa entra no 4º andar
         person_enter = 1;
-        #10;
+        #20; // é necessário um delay de 20 unidades para uma pessoa entrar e sair do elevador
         $display("Alguem está entrando no elevador");
         person_enter = 0;
-
         $display("Pessoas a bordo: %d", num_people);
 
-        req = 5'b01000; // Alguém pediu elevador no 3º andar
-        #10;
+        // 4. Outra pessoa pediu elevador no 3º andar
+        req = 5'b01000;
         $display("Requisição para o andar ", andar_requisitado);
+        #10;
         
         wait (andar_atual == 3'd3 && door_open == 1);
         $display("Elevador chegou ao andar %d", andar_atual);
-        #10;
         
+        // 5. Pessoa entrando no 3º andar
         person_enter = 1;
-        #10;
-        $display("Alguém está entrando. Pessoas a bordo: %d", num_people);
+        #20;
+        $display("Alguém está entrando");
         person_enter = 0;
-        #10;
+        $display("Pessoas a bordo: %d", num_people);
         req = 5'b00001; 
         #10;
         $display("Requisição para o andar ", andar_requisitado);
         
         wait (andar_atual == 3'd0 && door_open == 1);
-        // loop para todos saírem
-        while (num_people > 0) begin
-            person_exit = 1; 
-            #20;             
-            person_exit = 0;
-        end
+
+        // 6. Todo mundo sai no térreo
+        person_exit = 1;
+        #40;
+        person_exit = 0;
         $display("Todos saíram. Pessoas a bordo: %d", num_people);
 
-
-        // 6. Fim da simulação
-        #50;
+        #10;
         $display("Acabou simulação.");
         $finish;
     end
