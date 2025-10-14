@@ -1,29 +1,37 @@
-module elevator (
+module elevador (
     input clk,
     input reset,
-    input [4:0] req,             // Andar requisitado
-    input [2:0] current_floor,   // Andar atual
+    input [4:0] req,             // Andar requisitado (um bit por andar 0-4)
     input person_enter,          // Pessoa entrou
     input person_exit,           // Pessoa saiu
     output reg motor_up,
     output reg motor_down,
     output reg door_open,
     output reg busy,
+    output [2:0] andar_atual,
+    output [2:0] andar_requisitado,
     output reg [3:0] num_people  // Contador de pessoas
 );
 
-    // Definição de estados
+    // Definição de estados da FSM
     parameter IDLE        = 2'b00;
     parameter MOVING_UP   = 2'b01;
     parameter MOVING_DOWN = 2'b10;
     parameter DOOR_OPEN   = 2'b11;
 
+    // Registradores de estado
     reg [1:0] state, next_state;
     reg [2:0] target_floor;
+    reg [2:0] current_floor_reg;
 
-    // Escolha do andar requisitado
+    // Conecta os registradores internos à saída do módulo
+    assign andar_atual = current_floor_reg;
+    assign andar_requisitado = target_floor;
+
+    // Lógica para determinar o andar alvo (combinacional)
+    // Isso pode ser melhorado, mas mantém a lógica original
     always @(*) begin
-        target_floor = current_floor;
+        target_floor = current_floor_reg; // Default
         if (req[0]) target_floor = 3'd0;
         else if (req[1]) target_floor = 3'd1;
         else if (req[2]) target_floor = 3'd2;
@@ -31,8 +39,27 @@ module elevator (
         else if (req[4]) target_floor = 3'd4;
     end
 
-    // Lógica de transição 
+    // Lógica de atualização de estado (bloco sequencial principal)
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
+            state <= IDLE;
+            current_floor_reg <= 3'd0; // Elevador começa no térreo
+        end else begin
+            state <= next_state;
+            // ATUALIZAÇÃO DO ANDAR ATUAL
+            if (next_state == MOVING_UP) begin
+                // Simplificação: sobe um andar por ciclo de clock
+                current_floor_reg <= current_floor_reg + 1;
+            end else if (next_state == MOVING_DOWN) begin
+                // Simplificação: desce um andar por ciclo de clock
+                current_floor_reg <= current_floor_reg - 1;
+            end
+        end
+    end
+
+    // Lógica de transição de estados e saídas (bloco combinacional)
     always @(*) begin
+        // Valores padrão para as saídas
         next_state = state;
         motor_up   = 0;
         motor_down = 0;
@@ -42,30 +69,33 @@ module elevator (
         case (state)
             IDLE: begin
                 busy = 0;
+                // Se houver uma requisição
                 if (req != 5'b00000) begin
-                    if (target_floor > current_floor)
+                    if (target_floor > current_floor_reg)
                         next_state = MOVING_UP;
-                    else if (target_floor < current_floor)
+                    else if (target_floor < current_floor_reg)
                         next_state = MOVING_DOWN;
-                    else
+                    else // Já está no andar requisitado
                         next_state = DOOR_OPEN;
                 end
             end
 
             MOVING_UP: begin
                 motor_up = 1;
-                if (current_floor == target_floor)
+                if (current_floor_reg == target_floor)
                     next_state = DOOR_OPEN;
             end
 
             MOVING_DOWN: begin
                 motor_down = 1;
-                if (current_floor == target_floor)
+                if (current_floor_reg == target_floor)
                     next_state = DOOR_OPEN;
             end
 
             DOOR_OPEN: begin
                 door_open = 1;
+                // A porta ficaria aberta por um tempo. Em uma simulação simples,
+                // podemos voltar para IDLE imediatamente para aceitar novas chamadas.
                 next_state = IDLE;
             end
 
@@ -73,25 +103,15 @@ module elevator (
         endcase
     end
 
-    // Atualização do estado
-    always @(posedge clk or posedge reset) begin
-        if (reset)
-            state <= IDLE;
-        else
-            state <= next_state;
-    end
-
-    // People counter
+    // Contador de pessoas (bloco sequencial)
     always @(posedge clk or posedge reset) begin
         if (reset)
             num_people <= 4'd0;
-        else begin
-            if (door_open) begin
-                if (person_enter && num_people < 4'd15)
-                    num_people <= num_people + 1;
-                else if (person_exit && num_people > 4'd0)
-                    num_people <= num_people - 1;
-            end
+        else if (door_open) begin
+            if (person_enter && num_people < 4'd15)
+                num_people <= num_people + 1;
+            else if (person_exit && num_people > 4'd0)
+                num_people <= num_people - 1;
         end
     end
 
