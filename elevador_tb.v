@@ -32,8 +32,8 @@ module elevador_tb;
     always #5 clk = ~clk;
 
     initial begin
-        // $dumpfile("elevador.vcd");
-        // $dumpvars(0, elevador_tb);
+        $dumpfile("elevador.vcd");
+        $dumpvars(0, elevador_tb);
 
         clk = 0;
         reset = 1;
@@ -54,9 +54,10 @@ module elevador_tb;
         $display("Elevador chegou ao andar %d", andar_atual);
 
         // 3. Uma pessoa entra no 4º andar
+        @(posedge clk); 
         person_enter = 1;
-        #15; 
         $display("Alguem está entrando no elevador");
+        @(posedge clk); 
         person_enter = 0;
         $display("Pessoas a bordo: %d", num_people);
 
@@ -69,21 +70,24 @@ module elevador_tb;
         $display("Elevador chegou ao andar %d", andar_atual);
         
         // 5. Pessoa entrando no 3º andar
+        @(posedge clk); 
         person_enter = 1;
-        #15;
         $display("Alguém está entrando");
+        @(posedge clk); 
         person_enter = 0;
         $display("Pessoas a bordo: %d", num_people);
         req = 5'b00001; 
-        #10;
         $display("Requisição para o andar ", andar_requisitado);
-        
         wait (andar_atual == 3'd0);
         $display("Chegou ao andar ", andar_requisitado);
+
         // 6. Todo mundo sai no térreo
-        person_exit = 1;
-        #30;
-        person_exit = 0;
+        while(num_people > 0) begin
+            @(posedge clk); 
+            person_exit = 1;
+            @(posedge clk); 
+            person_exit = 0;
+        end
         $display("Todos saíram. Pessoas a bordo: %d", num_people);
 
         #10;
