@@ -6,7 +6,6 @@ module elevador (
     input person_exit,           // Pessoa saiu
     output reg motor_up,
     output reg motor_down,
-    output reg busy,
     output [2:0] andar_atual,
     output [2:0] andar_requisitado,
     output reg [3:0] num_people  // Contador de pessoas
@@ -58,11 +57,9 @@ module elevador (
         next_state = state;
         motor_up   = 0;
         motor_down = 0;
-        busy       = 1;
 
         case (state)
             IDLE: begin
-                busy = 0;
                 // Se houver uma requisição
                 if (req != 5'b00000) begin
                     if (target_floor > current_floor_reg)

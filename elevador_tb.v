@@ -10,7 +10,6 @@ module elevador_tb;
     // Saídas do UUT
     wire motor_up;
     wire motor_down;
-    wire busy;
     wire [2:0] andar_atual;
     wire [2:0] andar_requisitado;
     wire [3:0] num_people;
@@ -24,7 +23,6 @@ module elevador_tb;
         .person_exit(person_exit),
         .motor_up(motor_up),
         .motor_down(motor_down),
-        .busy(busy),
         .andar_atual(andar_atual),
         .andar_requisitado(andar_requisitado),
         .num_people(num_people)
