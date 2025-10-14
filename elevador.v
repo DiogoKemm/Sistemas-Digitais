@@ -1,7 +1,7 @@
 module elevador (
     input clk,
     input reset,
-    input [4:0] req,             // Andar requisitado (um bit por andar 0-4)
+    input [4:0] req,             // Andar requisitado
     input person_enter,          // Pessoa entrou
     input person_exit,           // Pessoa saiu
     output reg motor_up,
@@ -28,10 +28,9 @@ module elevador (
     assign andar_atual = current_floor_reg;
     assign andar_requisitado = target_floor;
 
-    // Lógica para determinar o andar alvo (combinacional)
-    // Isso pode ser melhorado, mas mantém a lógica original
+    // Determina o andar alvo
     always @(*) begin
-        target_floor = current_floor_reg; // Default
+        target_floor = current_floor_reg; 
         if (req[0]) target_floor = 3'd0;
         else if (req[1]) target_floor = 3'd1;
         else if (req[2]) target_floor = 3'd2;
@@ -39,19 +38,18 @@ module elevador (
         else if (req[4]) target_floor = 3'd4;
     end
 
-    // Lógica de atualização de estado (bloco sequencial principal)
+    // Lógica dos estados
     always @(posedge clk or posedge reset) begin
         if (reset) begin
             state <= IDLE;
             current_floor_reg <= 3'd0; // Elevador começa no térreo
         end else begin
             state <= next_state;
-            // ATUALIZAÇÃO DO ANDAR ATUAL
             if (next_state == MOVING_UP) begin
-                // Simplificação: sobe um andar por ciclo de clock
+                // Sobe um andar por ciclo de clock
                 current_floor_reg <= current_floor_reg + 1;
             end else if (next_state == MOVING_DOWN) begin
-                // Simplificação: desce um andar por ciclo de clock
+                // Desce um andar por ciclo de clock
                 current_floor_reg <= current_floor_reg - 1;
             end
         end
@@ -59,7 +57,6 @@ module elevador (
 
     // Lógica de transição de estados e saídas (bloco combinacional)
     always @(*) begin
-        // Valores padrão para as saídas
         next_state = state;
         motor_up   = 0;
         motor_down = 0;
@@ -94,8 +91,6 @@ module elevador (
 
             DOOR_OPEN: begin
                 door_open = 1;
-                // A porta ficaria aberta por um tempo. Em uma simulação simples,
-                // podemos voltar para IDLE imediatamente para aceitar novas chamadas.
                 next_state = IDLE;
             end
 
