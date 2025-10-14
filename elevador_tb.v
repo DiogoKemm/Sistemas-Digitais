@@ -10,7 +10,6 @@ module elevador_tb;
     // Saídas do UUT
     wire motor_up;
     wire motor_down;
-    wire door_open;
     wire busy;
     wire [2:0] andar_atual;
     wire [2:0] andar_requisitado;
@@ -25,7 +24,6 @@ module elevador_tb;
         .person_exit(person_exit),
         .motor_up(motor_up),
         .motor_down(motor_down),
-        .door_open(door_open),
         .busy(busy),
         .andar_atual(andar_atual),
         .andar_requisitado(andar_requisitado),
@@ -54,27 +52,27 @@ module elevador_tb;
         req = 5'b10000; 
         $display("Requisição para o andar %d", andar_requisitado);
         
-        wait (andar_atual == 3'd4 && door_open == 1);
+        wait (andar_atual == 3'd4);
         $display("Elevador chegou ao andar %d", andar_atual);
 
         // 3. Uma pessoa entra no 4º andar
         person_enter = 1;
-        #20; // é necessário um delay de 20 unidades para uma pessoa entrar e sair do elevador
+        #15; 
         $display("Alguem está entrando no elevador");
         person_enter = 0;
         $display("Pessoas a bordo: %d", num_people);
 
         // 4. Outra pessoa pediu elevador no 3º andar
         req = 5'b01000;
-        $display("Requisição para o andar ", andar_requisitado);
         #10;
+        $display("Requisição para o andar ", andar_requisitado);
         
-        wait (andar_atual == 3'd3 && door_open == 1);
+        wait (andar_atual == 3'd3);
         $display("Elevador chegou ao andar %d", andar_atual);
         
         // 5. Pessoa entrando no 3º andar
         person_enter = 1;
-        #20;
+        #15;
         $display("Alguém está entrando");
         person_enter = 0;
         $display("Pessoas a bordo: %d", num_people);
@@ -82,11 +80,11 @@ module elevador_tb;
         #10;
         $display("Requisição para o andar ", andar_requisitado);
         
-        wait (andar_atual == 3'd0 && door_open == 1);
-
+        wait (andar_atual == 3'd0);
+        $display("Chegou ao andar ", andar_requisitado);
         // 6. Todo mundo sai no térreo
         person_exit = 1;
-        #40;
+        #30;
         person_exit = 0;
         $display("Todos saíram. Pessoas a bordo: %d", num_people);
 

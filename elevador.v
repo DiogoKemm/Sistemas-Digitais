@@ -6,18 +6,16 @@ module elevador (
     input person_exit,           // Pessoa saiu
     output reg motor_up,
     output reg motor_down,
-    output reg door_open,
     output reg busy,
     output [2:0] andar_atual,
     output [2:0] andar_requisitado,
     output reg [3:0] num_people  // Contador de pessoas
 );
 
-    // Definição de estados da FSM
+    // Definição de estados da máquina
     parameter IDLE        = 2'b00;
     parameter MOVING_UP   = 2'b01;
     parameter MOVING_DOWN = 2'b10;
-    parameter DOOR_OPEN   = 2'b11;
 
     // Registradores de estado
     reg [1:0] state, next_state;
@@ -60,7 +58,6 @@ module elevador (
         next_state = state;
         motor_up   = 0;
         motor_down = 0;
-        door_open  = 0;
         busy       = 1;
 
         case (state)
@@ -73,25 +70,20 @@ module elevador (
                     else if (target_floor < current_floor_reg)
                         next_state = MOVING_DOWN;
                     else // Já está no andar requisitado
-                        next_state = DOOR_OPEN;
+                        next_state = IDLE;
                 end
             end
 
             MOVING_UP: begin
                 motor_up = 1;
                 if (current_floor_reg == target_floor)
-                    next_state = DOOR_OPEN;
+                    next_state = IDLE;
             end
 
             MOVING_DOWN: begin
                 motor_down = 1;
                 if (current_floor_reg == target_floor)
-                    next_state = DOOR_OPEN;
-            end
-
-            DOOR_OPEN: begin
-                door_open = 1;
-                next_state = IDLE;
+                    next_state = IDLE;
             end
 
             default: next_state = IDLE;
@@ -102,7 +94,7 @@ module elevador (
     always @(posedge clk or posedge reset) begin
         if (reset)
             num_people <= 4'd0;
-        else if (door_open) begin
+        else begin
             if (person_enter && num_people < 4'd15)
                 num_people <= num_people + 1;
             else if (person_exit && num_people > 4'd0)
