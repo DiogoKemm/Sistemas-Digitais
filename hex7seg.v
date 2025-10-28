@@ -1,11 +1,9 @@
-// converte 4 bits para 7 bits
-
 module hex7seg (
-    input  [3:0] hex,
+    input [3:0] num,
     output reg [6:0] seg
 );
     always @(*) begin
-        case (hex)
+        case (num)
             4'h0: seg = 7'b1000000;
             4'h1: seg = 7'b1111001;
             4'h2: seg = 7'b0100100;
@@ -22,7 +20,7 @@ module hex7seg (
             4'hD: seg = 7'b0100001;
             4'hE: seg = 7'b0000110;
             4'hF: seg = 7'b0001110;
-            default: seg = 7'b1111111; // tudo apagado
+            default: seg = 7'b1111111;
         endcase
     end
 endmodule
