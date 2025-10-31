@@ -7,8 +7,7 @@ module top_elevador (
     output [6:0] HEX0            // display de 7 segmentos
 );
 
-    // --- sinais internos ---
-    wire reset     = ~KEY[0];       // KEY0 = reset (ativo em 0)
+    wire reset = ~KEY[0];       
     wire clk_slow;
     wire [4:0] req;                 // requisição de andares
     wire person_enter, person_exit;
@@ -16,19 +15,19 @@ module top_elevador (
     wire [2:0] andar_atual, andar_requisitado;
     wire [3:0] num_people;
 
-    // --- entradas de controle ---
-    assign person_enter = SW[8];    // SW8 = pessoa entrou
-    assign person_exit  = SW[9];    // SW9 = pessoa saiu
-    assign req = SW[4:0];           // SW0–SW4 = requisições de andares
+    // Entradas
+    assign person_enter = SW[8];    // pessoa entrou
+    assign person_exit  = SW[9];    // pessoa saiu
+    assign req = SW[4:0];           // requisições de andares
 
-    // --- divisor de clock (para movimento visível) ---
+    // Diminuindo frequência do clock
     clock_divider #( .DIVISOR(25_000_000) ) div1Hz (
         .clk_in(CLOCK_50),
         .reset(reset),
         .clk_out(clk_slow)
     );
 
-    // --- instância do elevador ---
+    // Instância do elevador
     elevador dut (
         .clk(clk_slow),
         .reset(reset),
@@ -42,13 +41,13 @@ module top_elevador (
         .num_people(num_people)
     );
 
-    // --- LEDs ---
-    assign LEDR[4:0] = (1 << andar_requisitado); // andar requisitado
-    assign LEDG[4:0] = (1 << andar_atual);       // andar atual
+    // LEDS
+    assign LEDR[4:0] = (1 << andar_requisitado); 
+    assign LEDG[4:0] = (1 << andar_atual);       
     assign LEDR[9:5] = 5'b0;                     // LEDs não usados
     assign LEDG[7:5] = 3'b0;
 
-    // --- Display de número de pessoas ---
+    // Display sete segmentos
     hex7seg display_num_pessoas (
         .num(num_people),
         .seg(HEX0)
