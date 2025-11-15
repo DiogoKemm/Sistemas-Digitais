@@ -1,21 +1,21 @@
-module elevador_tb;
+`timescale 1ns/1ps
 
-    // Entradas para UUT
+module tb_elevador;
+
     reg clk;
     reg reset;
     reg [4:0] req;
     reg person_enter;
     reg person_exit;
 
-    // Saídas do UUT
     wire motor_up;
     wire motor_down;
     wire [2:0] andar_atual;
     wire [2:0] andar_requisitado;
     wire [3:0] num_people;
-    
-    // Instanciação do módulo `elevador`
-    elevador uut (
+
+    // Instancia o DUT (Device Under Test)
+    elevador DUT (
         .clk(clk),
         .reset(reset),
         .req(req),
@@ -28,71 +28,49 @@ module elevador_tb;
         .num_people(num_people)
     );
 
-    // Geração do clock (a cada 5 unidades de tempo, o clock inverte)
+    // Clock de 10ns (100 MHz)
     always #5 clk = ~clk;
 
     initial begin
-        $dumpfile("elevador.vcd");
-        $dumpvars(0, elevador_tb);
+        $display("Iniciando simulação");
 
+        // Valores iniciais
         clk = 0;
         reset = 1;
         req = 5'b00000;
         person_enter = 0;
         person_exit = 0;
-        #15;
-        reset = 0;
-        
-        // 1. Inicio
-        $display("Elevador no andar %d, pessoas a bordo: %d", andar_atual, num_people);
 
-        // 2. Ir do térreo para o 4º andar
-        req = 5'b10000; 
-        $display("Requisição para o andar %d", andar_requisitado);
-        
-        wait (andar_atual == 3'd4);
-        $display("Elevador chegou ao andar %d", andar_atual);
+        // Mantém reset por alguns ciclos
+        #20 reset = 0;
 
-        // 3. Uma pessoa entra no 4º andar
-        @(posedge clk); 
-        person_enter = 1;
-        $display("Alguem está entrando no elevador");
-        @(posedge clk); 
-        person_enter = 0;
-        $display("Pessoas a bordo: %d", num_people);
+        // Requisição múltipla 11010
+        #10 req = 5'b11010;    // Andares 4,3,1
 
-        // 4. Outra pessoa pediu elevador no 3º andar
-        req = 5'b01000;
-        #10;
-        $display("Requisição para o andar ", andar_requisitado);
-        
-        wait (andar_atual == 3'd3);
-        $display("Elevador chegou ao andar %d", andar_atual);
-        
-        // 5. Pessoa entrando no 3º andar
-        @(posedge clk); 
-        person_enter = 1;
-        $display("Alguém está entrando");
-        @(posedge clk); 
-        person_enter = 0;
-        $display("Pessoas a bordo: %d", num_people);
-        req = 5'b00001; 
-        $display("Requisição para o andar ", andar_requisitado);
-        wait (andar_atual == 3'd0);
-        $display("Chegou ao andar ", andar_requisitado);
+        #20 req = 5'b00000;   
 
-        // 6. Todo mundo sai no térreo
-        while(num_people > 0) begin
-            @(posedge clk); 
-            person_exit = 1;
-            @(posedge clk); 
-            person_exit = 0;
-        end
-        $display("Todos saíram. Pessoas a bordo: %d", num_people);
+        // Pessoas entrando 
+        #50 person_enter = 1;
+        #10 person_enter = 0;
 
-        #10;
-        $display("Acabou simulação.");
+        #30 person_enter = 1;
+        #10 person_enter = 0;
+
+        // Pessoas saindo
+        #80 person_exit = 1;
+        #10 person_exit = 0;
+
+        // Aguarda o elevador atender todos os andares
+        #300;
+
+        $display("Fim da simulação");
         $finish;
+    end
+
+    // Monitoramento de sinais
+    initial begin
+        $monitor("t=%0dns | andar_atual=%0d | alvo=%0d | UP=%b | DOWN=%b | pessoas=%0d | pending_req=%b",
+            $time, andar_atual, andar_requisitado, motor_up, motor_down, num_people, DUT.pending_req);
     end
 
 endmodule
